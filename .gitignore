@@ -2,3 +2,4 @@
 .vscode
 .conda
 dist
+.pytest_cache
