@@ -2,3 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 from . import nsight
+from . import dcgm
