@@ -3,6 +3,7 @@ from functools import partial
 import os
 from pathlib import Path
 import sys
+from typing import Tuple
 
 
 try:
@@ -28,7 +29,14 @@ except Exception as e:
 DCGM_JOB_ID = "DCGM_JOB"
 
 
-def init_hostengine(fieldIds, dcgmSamplingInterval, dcgmMaxKeepAge):
+def init_hostengine(
+    fieldIds, dcgmSamplingInterval, dcgmMaxKeepAge
+) -> Tuple[
+    pydcgm.DcgmGroup,
+    pydcgm.DcgmFieldGroup,
+    pydcgm.dcgm_field_helpers.DcgmFieldValueCollection,
+    pydcgm.DcgmHandle,
+]:
     opMode = dcgm_structs.DCGM_OPERATION_MODE_AUTO
     dcgmHandle = pydcgm.DcgmHandle(opMode=opMode)
     dcgmGroup = pydcgm.DcgmGroup(
@@ -53,8 +61,6 @@ def init_hostengine(fieldIds, dcgmSamplingInterval, dcgmMaxKeepAge):
     for gpu in supportedGPUs:
         dcgmGroup.AddGpu(gpu)
 
-    print("Running with supported GPUs", supportedGPUs)
-
     dcgmFieldGroup = pydcgm.DcgmFieldGroup(
         dcgmHandle, "profiling_metrics", fieldIds=fieldIds
     )
@@ -74,11 +80,11 @@ def get_metrics(
     dcgmFieldGroup: pydcgm.DcgmFieldGroup,
     dfvc: pydcgm.dcgm_field_helpers.DcgmFieldValueCollection,
     dcgmHandle: pydcgm.DcgmHandle,
-):
+) -> pydcgm.dcgm_field_helpers.DcgmFieldValueCollection:
     ## Get the current configuration for the group
     dcgmSamples = dcgmGroup.samples
     samples = dcgmSamples.GetAllSinceLastCall(dfvc=dfvc, fieldGroup=dcgmFieldGroup)
-    return samples.values
+    return samples
 
 
 vals = []
