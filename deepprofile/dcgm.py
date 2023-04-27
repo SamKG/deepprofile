@@ -19,21 +19,22 @@ try:
 except Exception as e:
     pass
     print(e)
-    print("Unable to find DCGM python bindings, please refer to the exmaple below: ")
-    print("DCGMPATH=/usr/local/dcgm python dcgm_example.py")
+    print(
+        "Unable to find DCGM python bindings, please set the `DCGMPATH` environment variable to the path of the dcgm folder, as demonstrated below: "
+    )
+    print("export DCGMPATH=/usr/local/dcgm")
 
 
 DCGM_JOB_ID = "DCGM_JOB"
 
 
-SAMPLE_INTERVAL = 1  # in microseconds
-
-
-def init_hostengine(fieldIds):
+def init_hostengine(fieldIds, dcgmSamplingInterval, dcgmMaxKeepAge):
     opMode = dcgm_structs.DCGM_OPERATION_MODE_AUTO
     dcgmHandle = pydcgm.DcgmHandle(opMode=opMode)
     dcgmGroup = pydcgm.DcgmGroup(
-        dcgmHandle, groupName="one_gpu_group", groupType=dcgm_structs.DCGM_GROUP_EMPTY
+        dcgmHandle,
+        groupName="one_gpu_group",
+        groupType=dcgm_structs.DCGM_GROUP_EMPTY,
     )
 
     ## Get a handle to the system level object for DCGM
@@ -57,7 +58,9 @@ def init_hostengine(fieldIds):
     dcgmFieldGroup = pydcgm.DcgmFieldGroup(
         dcgmHandle, "profiling_metrics", fieldIds=fieldIds
     )
-    dcgmGroup.samples.WatchFields(dcgmFieldGroup, SAMPLE_INTERVAL, 3600, 0)
+    dcgmGroup.samples.WatchFields(
+        dcgmFieldGroup, dcgmSamplingInterval, dcgmMaxKeepAge, 0
+    )
     dcgmSystem.profiling.Resume()
 
     dcgmSamples = dcgmGroup.samples
@@ -82,8 +85,14 @@ vals = []
 
 
 @contextmanager
-def dcgm_profiling_decorator(fieldIds=[1003, 1004]):
-    dcgmGroup, dcgmFieldGroup, dfvc, dcgmHandle = init_hostengine(fieldIds=fieldIds)
+def dcgm_profiling_decorator(
+    fieldIds=[1003, 1004], dcgmSamplingInterval=1000, dcgmMaxKeepAge=3600
+):
+    dcgmGroup, dcgmFieldGroup, dfvc, dcgmHandle = init_hostengine(
+        fieldIds=fieldIds,
+        dcgmSamplingInterval=dcgmSamplingInterval,
+        dcgmMaxKeepAge=dcgmMaxKeepAge,
+    )
     vals.append((dcgmGroup, dcgmFieldGroup, dfvc, dcgmHandle))
     try:
         yield partial(get_metrics, dcgmGroup, dcgmFieldGroup, dfvc, dcgmHandle)
